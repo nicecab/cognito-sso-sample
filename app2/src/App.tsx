@@ -1,10 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Amplify } from "aws-amplify";
+import { cognitoUserPoolsTokenProvider, signInWithRedirect, signOut } from 'aws-amplify/auth/cognito';
+import { CookieStorage } from 'aws-amplify/utils';
+import { fetchAuthSession } from '@aws-amplify/auth';
+
+Amplify.configure({
+  Auth: {
+    Cognito: {
+      userPoolId: import.meta.env.VITE_AWS_COGNITO_USER_POOL_ID,
+      userPoolClientId: import.meta.env.VITE_AWS_COGNITO_USER_POOL_CLIENT_ID,
+      loginWith: {
+        oauth: {
+          domain: 'sso.lib-bib.com',
+          scopes: [
+            // 'phone',
+            'email',
+            'profile',
+            'openid',
+            // 'aws.cognito.signin.user.admin'
+          ],
+          redirectSignIn: ['https://lo.lib-bib.com:5174/'],
+          redirectSignOut: ['https://lo.lib-bib.com:5174/'],
+          responseType: 'code' // or 'token', note that REFRESH token will only be generated when the responseType is code
+        }
+      }
+    }
+  },
+});
+
+cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({
+  domain: 'lib-bib.com',
+  path: '/',
+  expires: 30,
+  secure: true,
+  sameSite: 'lax'
+}));
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [params] = useState(new URLSearchParams(window.location.search));
+  const [code] = useState(params.get('code'));
+  const [email, setEmail] = useState<String|null>(null);
+  
+  useEffect(() => {
+    fetchAuthSession().then((sess) => {
+      const jwt = sess?.tokens?.idToken;
+
+      if(!jwt && !code) {
+        signInWithRedirect();
+      } else {
+        setEmail(jwt?.payload["email"] as string);
+      }
+    });
+  }, [code]);
 
   return (
     <>
@@ -16,18 +66,15 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Vite + React: 2</h1>
+
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <p>Signed in as <b>{email}</b></p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+
+      <div>
+        <button onClick={() => signOut()}>Sign out</button>
+      </div>
     </>
   )
 }
