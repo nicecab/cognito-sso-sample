@@ -14,25 +14,25 @@ Amplify.configure({
       userPoolClientId: import.meta.env.VITE_AWS_COGNITO_USER_POOL_CLIENT_ID,
       loginWith: {
         oauth: {
-          domain: 'sso.lib-bib.com',
+          domain: "auth.dev.apps-fracta-leap.com",
           scopes: [
             // 'phone',
-            'email',
-            'profile',
-            'openid',
+            "email",
+            "profile",
+            "openid",
             // 'aws.cognito.signin.user.admin'
           ],
-          redirectSignIn: ['https://lo.lib-bib.com:5173/'],
-          redirectSignOut: ['https://lo.lib-bib.com:5173/'],
-          responseType: 'code' // or 'token', note that REFRESH token will only be generated when the responseType is code
-        }
-      }
-    }
+          redirectSignIn: ["https://lo.dev.apps-fracta-leap.com:5173/"],
+          redirectSignOut: ["https://lo.dev.apps-fracta-leap.com:5173/"],
+          responseType: "code", // or 'token', note that REFRESH token will only be generated when the responseType is code
+        },
+      },
+    },
   },
 });
 
 cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({
-  domain: 'lib-bib.com',
+  domain: 'dev.apps-fracta-leap.com',
   path: '/',
   expires: 30,
   secure: true,
@@ -42,7 +42,7 @@ cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({
 function App() {
   const [params] = useState(new URLSearchParams(window.location.search));
   const [code] = useState(params.get('code'));
-  const [email, setEmail] = useState<String|null>(null);
+  const [email, setEmail] = useState<string|null>(null);
   
   useEffect(() => {
     fetchAuthSession().then((sess) => {
